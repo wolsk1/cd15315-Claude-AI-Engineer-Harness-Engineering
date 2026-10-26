@@ -6,7 +6,7 @@ $retail = Join-Path $root 'Engineer a Long-Conversation Context Strategy for a R
 $config = Join-Path $root 'Configure Claude Code for a Multi-Surface Monorepo Team\04-plan-mode-and-explore-decision-doc\solution'
 $monitor = Join-Path $root 'Build a Multi-Shift Quality Monitoring System with Claude Orchestration\04-fork-scratchpad\solution'
 $systems = @(
-    @{ Name = 'system-1-claims'; Source = $claims; Python = (Join-Path $claims '.venv\Scripts\python.exe') }
+    @{ Name = 'system-1-claims'; Source = $claims; Python = "$env:LOCALAPPDATA\venvs\claims-intake\Scripts\python.exe" }
     @{ Name = 'system-2-retail'; Source = $retail; Python = "$env:LOCALAPPDATA\venvs\retail-context\Scripts\python.exe" }
     @{ Name = 'system-3-config'; Source = $config; Python = (Join-Path $config '.venv\Scripts\python.exe') }
     @{ Name = 'system-4-monitor'; Source = $monitor; Python = (Join-Path $monitor '.venv\Scripts\python.exe') }
@@ -15,15 +15,19 @@ foreach ($system in $systems) {
     Push-Location $system.Source
     try {
         Write-Output $system.Name
-        & $system.Python -m pytest tests/ -v --color=no 2>&1 |
+        & $system.Python -m pytest tests/ -v -o 'addopts=' --color=no 2>&1 |
             Tee-Object -FilePath (Join-Path $evidence ($system.Name + '\tests.log')) |
             Select-Object -Last 3
         Write-Output "Test exit code: $LASTEXITCODE"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Test verification failed for $($system.Name)"
+        }
     } finally {
         Pop-Location
     }
 }
-Copy-Item -LiteralPath (Join-Path $retail 'runs\20261026-142551') -Destination (Join-Path $evidence 'system-2-retail\20261026-142551') -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $claims 'runs\20261026_171247') -Destination (Join-Path $evidence 'system-1-claims') -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $retail 'runs\20261026-142551') -Destination (Join-Path $evidence 'system-2-retail') -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $config '.claude') -Destination (Join-Path $evidence 'system-3-config') -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $config 'CLAUDE.md') -Destination (Join-Path $evidence 'system-3-config\CLAUDE.md') -Force
 Copy-Item -LiteralPath (Join-Path $config 'src') -Destination (Join-Path $evidence 'system-3-config') -Recurse -Force
