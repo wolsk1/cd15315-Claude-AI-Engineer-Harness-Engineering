@@ -19,3 +19,4 @@ uv.lock
 .ruff_cache/
 .coverage
 htmlcov/
+.env
